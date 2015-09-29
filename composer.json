@@ -1,0 +1,16 @@
+{
+    "name": "reekoheek/f-norm",
+    "description": "Norm access F middleware",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ganesha",
+            "email": "reekoheek@gmail.com"
+        }
+    ],
+    "require": {
+        "reekoheek/f": "dev-master",
+        "reekoheek/util": "^1.0.0",
+        "xinix-technology/norm": "^0.3.0",
+    }
+}
