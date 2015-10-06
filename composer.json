@@ -9,8 +9,8 @@
         }
     ],
     "require": {
-        "reekoheek/f": "dev-master",
+        "xinix-technology/bono": "^2.0",
         "reekoheek/util": "^1.0.0",
-        "xinix-technology/norm": "^0.3.0",
+        "xinix-technology/norm": "^0.3.0"
     }
 }

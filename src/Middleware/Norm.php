@@ -1,10 +1,10 @@
 <?php
 namespace ROH\FNorm\Middleware;
 
-use F\App;
+use Bono\App;
+use Bono\Http\Response;
 use ROH\Util\Options;
 use ROH\Util\Thing;
-use F\Http\Response;
 use Norm\Norm as TheNorm;
 use Norm\Filter\FilterException;
 
@@ -22,7 +22,7 @@ class Norm
 
         $datasources = $this->options['datasources'];
 
-        TheNorm::init(null, $this->options['collections']);
+        TheNorm::init($this->options);
 
         foreach ($datasources as $name => $datasource) {
             $datasource['config']['name'] = $name;
@@ -35,28 +35,27 @@ class Norm
 
     public function __invoke($request, $next)
     {
-        $notification = $request->getAttribute('notification');
         // TODO set norm !include
         // TODO set norm !tz
-        try {
-            return $next($request);
-        } catch (FilterException $e) {
-            if ($request->getContentType() === 'text/html') {
-                $response = Response::error(null, 400);
 
-                foreach ($e->getChildren() as $ce) {
+        $response = $next($request);
+        if ($response->getError() instanceof FilterException) {
+            $response = $response->withStatus(400);
+            if (empty($request->getHeaderLine('response-content-type')) ||
+                $request->getHeaderLine('response-content-type') === 'text/html') {
+                foreach ($response->getError()->getChildren() as $ce) {
                     $context = $ce instanceof FilterException ? $ce->context() : '';
-                    $notification->notify([
+                    $request['$notification']->notify([
                         'level' => 'error',
                         'context' => $context,
                         'code' => $ce->getCode(),
                         'message' => $ce->getMessage(),
                     ]);
                 }
-                return $response;
             } else {
-                return Response::error($e->getChildren()[0], 400);
+                $response = $response->withError($response->getError()->getChildren()[0]);
             }
         }
+        return $response;
     }
 }

@@ -2,7 +2,7 @@
 
 namespace ROH\FNorm\Resolver;
 
-use F\App;
+use Bono\App;
 
 class NormResolver
 {
