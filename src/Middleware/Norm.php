@@ -2,7 +2,6 @@
 namespace ROH\BonoNorm\Middleware;
 
 use Bono\Http\Context;
-use ROH\Util\Thing;
 use ROH\Util\Options;
 use Norm\Repository;
 use Norm\Filter;

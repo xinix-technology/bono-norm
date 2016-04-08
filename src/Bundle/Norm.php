@@ -5,6 +5,7 @@ use LogicException;
 use RuntimeException;
 use InvalidArgumentException;
 use Bono\Bundle\Rest;
+use Bono\App;
 use Bono\Http\Context;
 use Norm\Exception\FilterException;
 use ROH\Util\Inflector;
@@ -13,7 +14,7 @@ class Norm extends Rest
 {
     protected $collection;
 
-    public function __construct(array $options = [])
+    public function __construct(App $app, array $options = [])
     {
         // detect collection if not specified
         if (!isset($options['collection'])) {
@@ -54,7 +55,7 @@ class Norm extends Rest
             }
         });
 
-        parent::__construct($options);
+        parent::__construct($app, $options);
     }
 
     public function search(Context $context)
