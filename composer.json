@@ -9,9 +9,9 @@
         }
     ],
     "require": {
-        "xinix-technology/bono": "^2.0",
-        "xinix-technology/norm": "^2.0",
-        "reekoheek/util": "^1.0.0"
+        "xinix-technology/bono": "~2.1.0",
+        "xinix-technology/norm": "~2.0.0",
+        "reekoheek/util": "~1.0.0"
     },
     "autoload": {
         "psr-4": {
