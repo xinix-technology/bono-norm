@@ -1,21 +1,32 @@
 {
-    "name": "xinix-technology/bono-norm",
-    "description": "Norm glue code for Bono",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Ganesha",
-            "email": "reekoheek@gmail.com"
-        }
-    ],
-    "require": {
-        "xinix-technology/bono": "~2.1.0",
-        "xinix-technology/norm": "~2.0.0",
-        "reekoheek/util": "~1.1.3"
-    },
-    "autoload": {
-        "psr-4": {
-            "ROH\\BonoNorm\\": "src"
-        }
+  "name": "xinix-technology/bono-norm",
+  "description": "Norm glue code for Bono",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Ganesha",
+      "email": "reekoheek@gmail.com"
     }
+  ],
+  "require": {
+    "xinix-technology/bono": "~2.0.0",
+    "xinix-technology/norm": "~2.0.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "ROH\\BonoNorm\\": "src",
+      "Bono\\": "/Users/jafar/Workspaces/php/lib/bono/src/Bono/",
+      "Norm\\": "/Users/jafar/Workspaces/php/lib/norm/src/",
+      "ROH\\Util\\": "/Users/jafar/Workspaces/php/lib/php-util/src/ROH/Util/",
+      "JsonKit\\": "/Users/jafar/Workspaces/php/lib/php-jsonkit/src/JsonKit/",
+      "T\\": "/Users/jafar/Workspaces/php/lib/t/src/",
+      "Xinix\\BonoAuth\\": "/Users/jafar/Workspaces/php/lib/bono-auth/src/",
+      "Whoops\\": "/Users/jafar/Workspaces/php/lib/bono/vendor/filp/whoops/src/Whoops/",
+      "FastRoute\\": "/Users/jafar/Workspaces/php/lib/bono/vendor/nikic/fast-route/src/",
+      "Psr\\Http\\Message\\": "/Users/jafar/Workspaces/php/lib/bono/vendor/psr/http-message/src/"
+    }
+  }
 }

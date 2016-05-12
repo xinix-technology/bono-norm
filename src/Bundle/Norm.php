@@ -25,42 +25,74 @@ class Norm extends Rest
 
         $options['name'] = strtolower($options['collection']);
 
-        $this->addMiddleware(function (Context $context, $next) {
-            $context->depends('@norm');
-
-            // initialize collection
-            $this->getCollection($context);
-
-            if ($context['route.info'][0] === 1) {
-                $segments = explode('/', $context['route.info'][1]['handler'][1]);
-                $context['response.template'] = $this['name'] . '/' . end($segments);
-            }
-
-            try {
-                $next($context);
-            } catch ( FilterException $e) {
-                if (isset($context['@notification'])) {
-                    $errors = $e->getChildren();
-                    foreach ($errors as $error) {
-                        if (!($error instanceof FilterException)) {
-                            throw $error;
-                        }
-                        $context['@notification']->notify([
-                            'level' => 'error',
-                            'context' => $error->getContext(),
-                            'message' => $error->getMessage(),
-                        ]);
-                    }
-                }
-            }
-        });
+        $this->addMiddleware([$this, 'innerMiddleware']);
 
         parent::__construct($app, $options);
     }
 
+    public function innerMiddleware(Context $context, callable $next)
+    {
+        $context->depends('@norm');
+
+        // initialize collection
+        $this->getCollection($context);
+
+        if ($context->isRouted()) {
+            $segments = explode('/', $context['route.info'][1]['handler'][1]);
+            $context['@renderer.template'] = $this['name'] . '/' . end($segments);
+        }
+
+        try {
+            $next($context);
+        } catch ( FilterException $e) {
+            $context->setStatus(400);
+
+            $errors = $e->getChildren();
+            $context->setState('error', $errors[0]);
+
+            // $errors[0]
+            foreach ($errors as $error) {
+                if ($error instanceof FilterException) {
+                    $context->call('@notification', 'notify', [
+                        'level' => 'error',
+                        'context' => $error->getContext(),
+                        'message' => $error->getMessage(),
+                    ]);
+                } else {
+                    $context->call('@notification', 'notify', [
+                        'level' => 'error',
+                        'message' => $error->getMessage(),
+                    ]);
+                }
+            }
+        }
+    }
+
     public function search(Context $context)
     {
-        $entries = $this->getCollection()->find();
+        $criteria = [];
+
+        $q = $context->getQueryParams();
+
+        foreach ($q as $key => $value) {
+            if ('!' !== substr($key, 0, 1)) {
+                $criteria[$key] = $value;
+            }
+        }
+        $entries = $this->getCollection($context)->find($criteria);
+
+        if (isset($q['!sort'])) {
+            $entries->sort($q['!sort']);
+        }
+
+        if (isset($q['!skip'])) {
+            $entries->skip($q['!skip']);
+        }
+
+        if (isset($q['!limit'])) {
+            $entries->limit($q['!limit']);
+        }
+
         return [
             'entries' => $entries
         ];
@@ -68,31 +100,33 @@ class Norm extends Rest
 
     public function create(Context $context)
     {
+        $entry = $this->getCollection($context)->newInstance();
+
         if ('POST' === $context->getMethod()) {
-            $entry = $this->getCollection()->newInstance();
             $entry->set($context->getParsedBody());
+
+            // save state before throw
+            $context->setState('entry', $entry);
+
             $entry->save();
 
-            $context['@notification']->notify([
+            $context->call('@notification', 'notify', [
                 'level' => 'info',
                 'message' => 'Data created.',
             ]);
-
-            return [
-                'entry' => $entry,
-            ];
         }
+
+        return [
+            'entry' => $entry,
+        ];
     }
 
     public function update(Context $context)
     {
 
-        $id = $context['id'];
-        if (!empty($id)) {
-            $entry = $entry = $this->getCollection()->findOne($id);
-        }
+        $entry = null === $context['id'] ? null : $this->getCollection($context)->findOne($context['id']);
 
-        if (is_null($entry)) {
+        if (null === $entry) {
             return $context->throwError(404);
         }
 
@@ -100,7 +134,7 @@ class Norm extends Rest
             $entry->set($context->getParsedBody());
             $entry->save();
 
-            $context['@notification']->notify([
+            $context->call('@notification', 'notify', [
                 'level' => 'info',
                 'message' => 'Data updated.',
             ]);
@@ -113,12 +147,9 @@ class Norm extends Rest
 
     public function read(Context $context)
     {
-        $id = $context['id'];
-        if (!empty($id)) {
-            $entry = $this->getCollection()->findOne($id);
-        }
+        $entry = null === $context['id'] ? null : $this->getCollection($context)->findOne($context['id']);
 
-        if (is_null($entry)) {
+        if (null === $entry) {
             return $context->throwError(404);
         }
 
@@ -129,36 +160,39 @@ class Norm extends Rest
 
     public function delete(Context $context)
     {
+        $entry = null === $context['id'] ? null : $this->getCollection($context)->findOne($context['id']);
+
         if ('DELETE' === $context->getMethod()) {
-            if (isset($context['id'])) {
-                $ids = [$context['id']];
+            if (null === $entry) {
+                return $context->throwError(404);
             }
 
-            foreach ($ids as $id) {
-                $entry = $this->getCollection()->findOne($context['id']);
-                if (isset($entry)) {
-                    $entry->remove();
-                }
-            }
+            $entry->remove();
 
-            $context['@notification']->notify([
+            $context->call('@notification', 'notify', [
                 'level' => 'info',
                 'message' => 'Data deleted.',
             ]);
         }
+
+        return [
+            'entry' => $entry
+        ];
     }
 
-    public function getCollection(Context $context = null)
+    public function getCollection(Context $context)
     {
-        if (is_null($this->collection)) {
-            $this->collection = $context['@norm']->factory($this['collection']);
+        $context->depends('@norm');
+
+        if (null === $this->collection) {
+            $this->collection = $context['@norm']->factory($context, $this['collection']);
         }
 
         return $this->collection;
     }
 
-    public function getSchema()
+    public function getSchema(Context $context)
     {
-        return $this->collection->getSchema();
+        return $this->getCollection($context);
     }
 }

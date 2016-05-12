@@ -3,54 +3,88 @@ namespace ROH\BonoNorm\Middleware;
 
 use Bono\Http\Context;
 use ROH\Util\Options;
+use ROH\Util\Injector;
 use Norm\Repository;
 use Norm\Filter;
 use Bono\App;
 
 class Norm
 {
-    protected $options;
+    protected $app;
+
+    protected $connections;
+
+    protected $default;
+
+    protected $resolvers;
+
+    protected $attributes;
 
     protected $repository;
 
-    public function __construct(array $options = [])
+    protected $renderer;
+
+    public function __construct(App $app, array $connections, array $attributes = [], array $default = null, array $resolvers = [])
     {
-        $this->options = Options::create([])->merge($options)->toArray();
+        $this->app = $app;
+        $this->connections = $connections;
+        $this->default = $default;
+        $this->resolvers = $resolvers;
+        $this->attributes = $attributes;
     }
 
-    public function getRepository(Context $context = null)
+    public function getRepository(Context $context)
     {
-        if (is_null($this->repository)) {
-            $this->repository = new Repository($this->options);
-
-            if (isset($context['response.renderer'])) {
-                $repository = $this->repository;
-                $this->repository->setRenderer(function ($template, $data) use ($context, $repository) {
-                    if ($context['response.renderer']->resolve($template)) {
-                        return $context['response.renderer']->render($template, $data);
-                    } else {
-                        return $repository->defaultRender($template, $data);
-                    }
-                });
+        $injector = $this->app->getInjector();
+        if (null === $this->repository) {
+            $this->repository = new Repository($this->attributes);
+            foreach ($this->connections as $connectionDescriptor) {
+                $this->repository->addConnection($injector->resolve($connectionDescriptor, [
+                    'repository' => $this->repository,
+                ]));
             }
-            // $this->repository->setRenderer()
+
+            if (null !== $this->default) {
+                $this->repository->setDefault($this->default);
+            }
+
+            if (null !== $this->resolvers) {
+                foreach ($this->resolvers as $resolver) {
+                    $this->repository->addResolver($injector->resolve($resolver));
+                }
+            }
+
+            if (null !== $context['@renderer']) {
+                $this->renderer = $context['@renderer'];
+                $this->repository->setRenderer([$this, 'defaultRenderer']);
+            }
         }
         return $this->repository;
     }
 
-    public function factory($collectionId, $connectionId = '')
+    public function defaultRenderer($template, $data)
     {
-        return $this->repository->factory($collectionId, $connectionId);
+        return $this->renderer->resolve($template)
+            ? $this->renderer->render($template, $data)
+            : $this->repository->defaultRender($template, $data);
     }
 
-    public function __invoke(Context $context, $next)
+    public function factory(Context $context, $collectionId, $connectionId = '')
+    {
+        return $this->getRepository($context)->factory($collectionId, $connectionId);
+    }
+
+    public function __invoke(Context $context, callable $next)
     {
         // initiate repository
         $repository = $this->getRepository($context);
         if (isset($context['timezone'])) {
             $repository->setAttribute('timezone', $context['timezone']);
         }
-        // TODO set norm !include
+
+        if (null !== $context['@renderer']) {
+            $context['@renderer']->addTemplatePath(__DIR__.'/../../templates');
+        }
 
         $context['@norm'] = $this;
 
