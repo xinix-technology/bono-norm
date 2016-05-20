@@ -30,7 +30,10 @@ class Norm
         $this->connections = $connections;
         $this->default = $default;
         $this->resolvers = $resolvers;
-        $this->attributes = $attributes;
+        $this->attributes = (new Options([
+            'salt' => null,
+            'nfile.uploadUrl' => '/norm/upload',
+        ]))->merge($attributes)->toArray();
     }
 
     public function getRepository(Context $context)
@@ -74,20 +77,41 @@ class Norm
         return $this->getRepository($context)->factory($collectionId, $connectionId);
     }
 
+    protected function routeUpload(Context $context)
+    {
+        $dataDir = $context->getHeaderLine('x-data-dir');
+        @mkdir($dataDir, 0755, true);
+        $result = [];
+        foreach ($context->getUploadedFiles() as $files) {
+            foreach($files as $file) {
+                $filename = $file->getClientFilename();
+                $file->moveTo($dataDir . '/' . $filename);
+                $result[] = $filename;
+            }
+        }
+        $context->setStatus(200);
+        $context->setContentType('application/json');
+        $context->setState('files', $result);
+    }
+
     public function __invoke(Context $context, callable $next)
     {
-        // initiate repository
-        $repository = $this->getRepository($context);
-        if (isset($context['timezone'])) {
-            $repository->setAttribute('timezone', $context['timezone']);
+        if ($this->attributes['nfile.uploadUrl'] === $context->getUri()->getPath()) {
+            $this->routeUpload($context);
+        } else {
+            // initiate repository
+            $repository = $this->getRepository($context);
+            if (isset($context['timezone'])) {
+                $repository->setAttribute('timezone', $context['timezone']);
+            }
+
+            if (null !== $context['@renderer']) {
+                $context['@renderer']->addTemplatePath(__DIR__.'/../../templates');
+            }
+
+            $context['@norm'] = $this;
+            $next($context);
         }
 
-        if (null !== $context['@renderer']) {
-            $context['@renderer']->addTemplatePath(__DIR__.'/../../templates');
-        }
-
-        $context['@norm'] = $this;
-
-        $next($context);
     }
 }
