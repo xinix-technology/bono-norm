@@ -41,6 +41,7 @@ class Norm
         $injector = $this->app->getInjector();
         if (null === $this->repository) {
             $this->repository = new Repository($this->attributes);
+
             foreach ($this->connections as $connectionDescriptor) {
                 $this->repository->addConnection($injector->resolve($connectionDescriptor, [
                     'repository' => $this->repository,

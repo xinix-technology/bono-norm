@@ -101,12 +101,11 @@ class Norm extends Rest
     public function create(Context $context)
     {
         $entry = $this->getCollection($context)->newInstance();
+        // save state before throw
+        $context->setState('entry', $entry);
 
         if ('POST' === $context->getMethod()) {
             $entry->set($context->getParsedBody());
-
-            // save state before throw
-            $context->setState('entry', $entry);
 
             $entry->save();
 
