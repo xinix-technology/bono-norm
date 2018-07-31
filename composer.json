@@ -1,23 +1,41 @@
 {
-    "name": "xinix-technology/bono-norm",
-    "description": "Norm glue code for Bono",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Ganesha",
-            "email": "reekoheek@gmail.com"
-        }
-    ],
-    "require": {
-        "xinix-technology/bono": "~2.2.0",
-        "xinix-technology/norm": "~2.2.0"
-    },
-    "require-dev": {
-        "phpunit/phpunit": "*"
-    },
-    "autoload": {
-        "psr-4": {
-            "ROH\\BonoNorm\\": "src"
-        }
+  "name": "xinix-technology/bono-norm",
+  "description": "Norm glue code for Bono",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Ganesha",
+      "email": "reekoheek@gmail.com"
     }
+  ],
+  "type": "library",
+  "scripts": {
+    "lint": "phpcs .",
+    "test": "phpunit test",
+    "coverage": [
+      "rm -rf ./coverage",
+      "phpunit --whitelist=./src/ --coverage-html=./coverage test"
+    ],
+    "post-install-cmd": "cghooks add --ignore-lock",
+    "post-update-cmd": "cghooks update"
+  },
+  "require": {
+    "xinix-technology/bono": "^2.2",
+    "xinix-technology/norm": "^2.2"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^7.2",
+    "squizlabs/php_codesniffer": "^3.3",
+    "brainmaestro/composer-git-hooks": "^2.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "BonoNorm\\": "src"
+    }
+  },
+  "extra": {
+    "hooks": {
+      "pre-commit": "composer lint && composer test"
+    }
+  }
 }

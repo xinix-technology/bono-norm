@@ -4,12 +4,12 @@ If you want to use [Bono 2](http://bono.github.com) as your web application deve
 
 ## How to Use
 
-Prepare Norm repository using bono-norm middleware, add `ROH\BonoNorm\Middleware\Norm` to Bono bundle middlewares configuration section or `config/config.php` file.
+Prepare Norm repository using bono-norm middleware, add `BonoNorm\Middleware` to Bono bundle middlewares configuration section or `config/config.php` file.
 
 ```php
 return [
   "middlewares": [
-    [ ROH\BonoNorm\Middleware\Norm::class, [
+    [ BonoNorm\Middleware::class, [
       "options" => [
         "connections" => [...],
         "collections" => [...],

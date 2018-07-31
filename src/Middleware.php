@@ -1,5 +1,5 @@
 <?php
-namespace ROH\BonoNorm\Middleware;
+namespace BonoNorm;
 
 use Bono\Http\Context;
 use ROH\Util\Options;
@@ -8,7 +8,7 @@ use Norm\Repository;
 use Norm\Filter;
 use Bono\App;
 
-class Norm
+class Middleware
 {
     protected $app;
 
@@ -24,8 +24,13 @@ class Norm
 
     protected $renderer;
 
-    public function __construct(App $app, array $connections, array $attributes = [], array $default = null, array $resolvers = [])
-    {
+    public function __construct(
+        App $app,
+        array $connections,
+        array $attributes = [],
+        array $default = null,
+        array $resolvers = []
+    ) {
         $this->app = $app;
         $this->connections = $connections;
         $this->default = $default;
@@ -84,7 +89,7 @@ class Norm
         @mkdir($dataDir, 0755, true);
         $result = [];
         foreach ($context->getUploadedFiles() as $files) {
-            foreach($files as $file) {
+            foreach ($files as $file) {
                 $filename = $file->getClientFilename();
                 $file->moveTo($dataDir . '/' . $filename);
                 $result[] = $filename;
@@ -107,12 +112,11 @@ class Norm
             }
 
             if (null !== $context['@renderer']) {
-                $context['@renderer']->addTemplatePath(__DIR__.'/../../templates');
+                $context['@renderer']->addTemplatePath(__DIR__ . '/../../templates');
             }
 
             $context['@norm'] = $this;
             $next($context);
         }
-
     }
 }

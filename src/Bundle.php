@@ -1,5 +1,5 @@
 <?php
-namespace ROH\BonoNorm\Bundle;
+namespace BonoNorm;
 
 use LogicException;
 use RuntimeException;
@@ -10,7 +10,7 @@ use Bono\Http\Context;
 use Norm\Exception\FilterException;
 use ROH\Util\Inflector;
 
-class Norm extends Rest
+class Bundle extends Rest
 {
     protected $collection;
 
@@ -44,7 +44,7 @@ class Norm extends Rest
 
         try {
             $next($context);
-        } catch ( FilterException $e) {
+        } catch (FilterException $e) {
             $context->setStatus(400);
 
             $errors = $e->getChildren();
@@ -82,15 +82,15 @@ class Norm extends Rest
         $entries = $this->getCollection($context)->find($criteria);
 
         if (isset($q['!sort'])) {
-            $entries->sort($q['!sort']);
+            $entries->setSort($q['!sort']);
         }
 
         if (isset($q['!skip'])) {
-            $entries->skip($q['!skip']);
+            $entries->setSkip($q['!skip']);
         }
 
         if (isset($q['!limit'])) {
-            $entries->limit($q['!limit']);
+            $entries->setLimit($q['!limit']);
         }
 
         return [
@@ -122,7 +122,6 @@ class Norm extends Rest
 
     public function update(Context $context)
     {
-
         $entry = null === $context['id'] ? null : $this->getCollection($context)->findOne($context['id']);
 
         if (null === $entry) {

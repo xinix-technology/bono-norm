@@ -1,9 +1,9 @@
 <?php
 
-namespace ROH\BonoNorm\Test\Middleware;
+namespace BonoNorm\Test;
 
-use PHPUnit_Framework_TestCase;
-use ROH\BonoNorm\Middleware\Norm;
+use PHPUnit\Framework\TestCase;
+use BonoNorm\Middleware;
 use Bono\App;
 use Bono\Http\Context;
 use Norm\Repository;
@@ -11,7 +11,8 @@ use Norm\Collection;
 use Norm\Adapter\Memory;
 use ROH\Util\Injector;
 
-class NormTest extends PHPUnit_Framework_TestCase {
+class MiddlewareTest extends TestCase
+{
     public function setUp()
     {
         $this->injector = new Injector();
@@ -20,12 +21,12 @@ class NormTest extends PHPUnit_Framework_TestCase {
 
     public function testConstruct()
     {
-        $middleware = $this->injector->resolve(Norm::class, [
+        $middleware = $this->injector->resolve(Middleware::class, [
             'connections' => [
                 [Memory::class],
             ]
         ]);
-        $this->assertInstanceOf(Norm::class, $middleware);
+        $this->assertInstanceOf(Middleware::class, $middleware);
 
         $repository = $middleware->getRepository($this->injector->resolve(Context::class));
         $this->assertInstanceOf(Repository::class, $repository);
@@ -35,14 +36,14 @@ class NormTest extends PHPUnit_Framework_TestCase {
 
     public function testConstructWithAttributesAndDefault()
     {
-        $middleware = $this->injector->resolve(Norm::class, [
+        $middleware = $this->injector->resolve(Middleware::class, [
             'connections' => [
                 [Memory::class],
             ],
             'attributes' => [],
             'default' => [],
         ]);
-        $this->assertInstanceOf(Norm::class, $middleware);
+        $this->assertInstanceOf(Middleware::class, $middleware);
 
         $repository = $middleware->getRepository($this->injector->resolve(Context::class));
         $this->assertInstanceOf(Repository::class, $repository);
@@ -52,9 +53,11 @@ class NormTest extends PHPUnit_Framework_TestCase {
 
     public function testConstructWithResolvers()
     {
-        $resolver1 = function() {};
-        $resolver2 = function() {};
-        $middleware = $this->injector->resolve(Norm::class, [
+        $resolver1 = function () {
+        };
+        $resolver2 = function () {
+        };
+        $middleware = $this->injector->resolve(Middleware::class, [
             'connections' => [
                 [Memory::class],
             ],
@@ -65,7 +68,7 @@ class NormTest extends PHPUnit_Framework_TestCase {
                 $resolver2,
             ],
         ]);
-        $this->assertInstanceOf(Norm::class, $middleware);
+        $this->assertInstanceOf(Middleware::class, $middleware);
 
         $repository = $middleware->getRepository($this->injector->resolve(Context::class));
         $this->assertInstanceOf(Repository::class, $repository);
@@ -77,15 +80,17 @@ class NormTest extends PHPUnit_Framework_TestCase {
 
     public function testGetRepositoryWithRenderer()
     {
-        $middleware = $this->injector->resolve(Norm::class, [
+        $middleware = $this->injector->resolve(Middleware::class, [
             'connections' => [
                 [Memory::class],
             ],
         ]);
-        $this->assertInstanceOf(Norm::class, $middleware);
+        $this->assertInstanceOf(Middleware::class, $middleware);
 
         $context = $this->injector->resolve(Context::class);
-        $renderer = $context['@renderer'] = $this->getMock(\stdClass::class, ['resolve', 'render']);
+        $renderer = $context['@renderer'] = $this->getMockBuilder(\stdClass::class)
+            ->setMethods(['resolve', 'render'])
+            ->getMock();
         $renderer->expects($this->once())->method('resolve')->will($this->returnValue(true));
         $renderer->expects($this->once())->method('render');
 
@@ -96,7 +101,7 @@ class NormTest extends PHPUnit_Framework_TestCase {
 
     public function testFactory()
     {
-        $middleware = $this->injector->resolve(Norm::class, [
+        $middleware = $this->injector->resolve(Middleware::class, [
             'connections' => [
                 [Memory::class],
             ],
@@ -109,7 +114,7 @@ class NormTest extends PHPUnit_Framework_TestCase {
 
     public function testInvoke()
     {
-        $middleware = $this->injector->resolve(Norm::class, [
+        $middleware = $this->injector->resolve(Middleware::class, [
             'connections' => [
                 [Memory::class],
             ],
@@ -118,11 +123,14 @@ class NormTest extends PHPUnit_Framework_TestCase {
         $context = $this->injector->resolve(Context::class);
         $context['timezone'] = 'Foo/Bar';
 
-        $renderer = $context['@renderer'] = $this->getMock(\stdClass::class, ['resolve', 'render', 'addTemplatePath']);
+        $renderer = $context['@renderer'] = $this->getMockBuilder(\stdClass::class)
+            ->setMethods(['resolve', 'render', 'addTemplatePath'])
+            ->getMock();
+
         $renderer->expects($this->once())->method('addTemplatePath');
 
         $hit = false;
-        $middleware->__invoke($context, function() use (&$hit) {
+        $middleware->__invoke($context, function () use (&$hit) {
             $hit = true;
         });
 
